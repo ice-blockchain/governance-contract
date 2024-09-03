@@ -1380,11 +1380,15 @@ int announce_new_elections(slice storage, cell credits) impure inline {
   (_, int min_stake) = config_param(config_params::validators_stakes).begin_parse().load_grams();
   ;; announce new elections
   int elect_at = t + elect_begin_before;
-  cell past_elections = storage.preload_ref();
-  (_, _, int f) = past_elections.udict_get_nexteq?(32, elect_at);
-  if(f) {
-    ;; new election will be set before existed one
-    return false;
+  cell elect_data = get_data().begin_parse().preload_dict();
+  ifnot (elect_data.null?()) {
+    ;; general case when there is election data stored
+    cell past_elections = storage.preload_ref();
+    (_, _, int f) = past_elections.udict_get_nexteq?(32, elect_at);
+    if(f) {
+      ;; new election will be set before existed one
+      return false;
+    }
   }
   int elect_close = elect_at - elect_end_before;
   cell elect = pack_elect(elect_at, elect_close, min_stake, 0, new_dict(), false, false);
